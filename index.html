@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Tasks</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--text:#1d2530;--muted:#6b7585;--line:#e2e6ec;--accent:#2563eb;--high:#dc2626;--med:#d97706;--low:#059669;--over:#fef2f2}
+:root{--u-today:#1e40af;--u-tom:#dbeafe;--u-tomline:#93c5fd;--u-week:#ecfdf5;--u-weekline:#a7f3d0;--hold:#fef3c7;--holdline:#fcd34d}
+:root[data-theme=dark]{--u-today:#2563eb;--u-tom:#1b2c47;--u-tomline:#2f5a96;--u-week:#14291f;--u-weekline:#245c3f;--hold:#352b10;--holdline:#8a6d1c;--bg:#12161c;--panel:#1a2029;--text:#e6e9ee;--muted:#8f9aab;--line:#2a323d;--accent:#5b8def;--over:#2a1a1c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:24px 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+h1{font-size:22px;margin:0;flex:1}
+button,input,select,textarea{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.ghost{border:0;background:none;color:var(--muted);padding:4px 8px}
+button.ghost:hover{color:var(--text)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.tabs button{border-color:transparent;background:none;color:var(--muted)}
+.tabs button.on{background:var(--panel);border-color:var(--line);color:var(--text);font-weight:600}
+#q{padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);min-width:180px}
+.task{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.task.High{border-left-color:var(--high)}.task.Medium{border-left-color:var(--med)}.task.Low{border-left-color:var(--low)}
+.task.over{background:var(--over)}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.task input[type=checkbox]{margin-top:4px;width:18px;height:18px;cursor:pointer}
+.body{flex:1;min-width:0}
+.t{font-weight:600;word-break:break-word}
+.meta{color:var(--muted);font-size:13px;margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+.meta .late{color:var(--high);font-weight:600}
+.notes{font-size:13px;color:var(--muted);margin-top:4px;white-space:pre-wrap}
+.acts{display:flex;flex-shrink:0}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);width:min(520px,94vw);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+dialog input[type=text],dialog input[type=datetime-local],dialog select,dialog textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{margin:0;display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;color:var(--text);font-size:14px;background:var(--bg)}
+.chips label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.chips input{accent-color:var(--accent)}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+dialog input[type=date]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:8px}
+.tile{text-align:left;padding:12px}
+.tile b{display:block;font-size:26px;line-height:1.1}
+.tile span{color:var(--muted);font-size:13px}
+.tile.warn b{color:var(--high)}
+h2.sec{font-size:15px;margin:22px 0 8px}
+h2.sec small{color:var(--muted);font-weight:400}
+.proj{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.proj .h{display:flex;gap:8px;align-items:center}
+.bar2{height:6px;background:var(--line);border-radius:3px;margin:8px 0 4px;overflow:hidden}
+.bar2 i{display:block;height:100%;background:var(--accent)}
+.day{color:var(--muted);font-size:13px;margin:12px 0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.card:hover{border-color:var(--accent)}
+.card.u-over{background:var(--over);border-color:var(--high)}
+.card.u-today{background:var(--u-today);border-color:var(--u-today);color:#fff}
+.card.u-today .meta,.card.u-today .meta span{color:#dbeafe}
+.card.u-tom{background:var(--u-tom);border-color:var(--u-tomline)}
+.card.u-week{background:var(--u-week);border-color:var(--u-weekline)}
+.card.hold{background:var(--hold);border-color:var(--holdline)}
+.card.fin{opacity:.75}
+.bar2.hold i{background:var(--med)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:1px solid var(--line)}
+.card.High{border-left:4px solid var(--high)}.card.Medium{border-left:4px solid var(--med)}.card.Low{border-left:4px solid var(--low)}
+.card.over{background:var(--over)}
+.card.done .t{text-decoration:line-through;color:var(--muted)}
+.card .ct{display:flex;gap:10px;align-items:flex-start}
+.card .ct input{margin-top:3px;width:18px;height:18px;cursor:pointer}
+.late{color:var(--high);font-weight:600}
+#ddlg{width:min(560px,94vw);max-height:92vh;overflow:auto}
+#pdlg{width:min(620px,94vw);max-height:92vh;overflow:auto}
+.dyn{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 108px auto;gap:8px;margin-bottom:6px}
+.hint{font-size:12px;color:var(--muted);font-weight:400}
+.today{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:14px}
+.today ul{margin:6px 0 0;padding-left:20px}.today li{margin:3px 0}
+.today .lnk{color:var(--text);text-align:left}
+.today .k{display:inline-block;min-width:50px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--accent)}
+.today .mute{color:var(--muted);list-style:none;margin-left:-20px}
+.it{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
+.it>span:first-child{flex:1;min-width:160px}
+.it.dim>span:first-child{text-decoration:line-through;color:var(--muted)}
+.it .ghost{padding:2px 8px;font-size:12px;border:1px solid var(--line)}
+.pp{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.pp input{max-width:210px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+dialog input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+#pldlg{width:min(620px,94vw);max-height:92vh;overflow:auto}
+.planbox{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.pg{margin:8px 0}
+.pi{display:flex;gap:8px;align-items:flex-start;margin:3px 0;color:var(--text);font-size:14px;cursor:pointer}
+.pi input{margin-top:3px;width:16px;height:16px}
+.dn{text-decoration:line-through;color:var(--muted)}
+.pi2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pi2 .pi{flex:1;min-width:180px}
+.pi2 .ghost{font-size:12px;padding:2px 6px}
+#dbody h2{margin:0 0 6px;font-size:19px}
+.dr{display:grid;grid-template-columns:90px 1fr;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.dr>span{color:var(--muted)}.dr div{white-space:pre-wrap;word-break:break-word}
+.rt{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border-radius:0;border-bottom:1px solid var(--line);color:var(--text);padding:8px 2px}
+.lnk{padding:0;color:var(--accent)}
+.pill{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>My Tasks</h1>
+    <button id="theme" title="Switch light/dark">Theme</button>
+    <button id="addp">New project</button>
+    <button class="primary" id="add">New task</button>
+  </header>
+  <div class="bar">
+    <div class="tabs" id="tabs"></div>
+    <input id="q" type="search" placeholder="Search tasks" aria-label="Search tasks">
+  </div>
+  <div class="legend"><span><i style="background:var(--over);border-color:var(--high)"></i>Overdue</span><span><i style="background:var(--u-today)"></i>Due today</span><span><i style="background:var(--u-tom);border-color:var(--u-tomline)"></i>Due tomorrow</span><span><i style="background:var(--u-week);border-color:var(--u-weekline)"></i>Next 7 days</span><span><i style="background:var(--hold);border-color:var(--holdline)"></i>On hold</span></div>
+  <div id="list"></div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="form" autocomplete="off">
+    <h2 id="dt" style="margin:0 0 4px;font-size:18px">New task</h2>
+    <label for="f-title">Title</label>
+    <input type="text" id="f-title" required>
+    <div class="row">
+      <div><label for="f-due">Due date and time</label><input type="datetime-local" id="f-due"></div>
+      <div><label for="f-pri">Priority</label>
+        <select id="f-pri"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="f-cat">Category</label><input type="text" id="f-cat" placeholder="e.g. Client, Admin"></div>
+      <div><label for="f-rep">Repeat</label>
+        <select id="f-rep"><option value="">Never</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
+    </div>
+    <label for="f-proj">Project</label>
+    <select id="f-proj"></select>
+    <label>Remind me before it's due</label>
+    <div class="chips" id="chips"></div>
+    <label for="f-notes">Notes</label>
+    <textarea id="f-notes" rows="3"></textarea>
+    <div class="foot">
+      <button type="button" id="cancel">Cancel</button>
+      <button class="primary" type="submit" id="save">Save task</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="ddlg"><div id="dbody"></div></dialog>
+
+<dialog id="pldlg">
+  <form method="dialog" id="plform">
+    <h2 style="margin:0 0 4px;font-size:18px">Plan the days</h2>
+    <div class="hint" id="pl-name"></div>
+    <div class="row">
+      <div><label for="pl-start">Start date</label><input type="date" id="pl-start"></div>
+      <div><label for="pl-days">Number of days</label><input type="number" id="pl-days" min="1" max="60" value="10"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="pl-wk"> Skip Saturday and Sunday</label>
+    <div id="pl-grid"></div>
+    <div class="hint" style="margin-top:8px">One line = one task for that day. Each day's tasks appear in Today's work on the dashboard. Whatever is still unchecked moves to the next day automatically.</div>
+    <div class="foot"><button type="button" id="pl-cancel">Cancel</button><button class="primary" type="submit">Save plan</button></div>
+  </form>
+</dialog>
+
+<dialog id="hdlg">
+  <form method="dialog" id="hform">
+    <h2 id="hdt" style="margin:0 0 4px;font-size:18px">Put project on hold</h2>
+    <div class="hint" id="hname"></div>
+    <label for="h-date" id="lbl-hd">Date</label>
+    <input type="date" id="h-date" required>
+    <label for="h-reason" id="lbl-hr">Reason</label>
+    <textarea id="h-reason" rows="3" required></textarea>
+    <div class="foot"><button type="button" id="hcancel">Cancel</button><button class="primary" type="submit" id="hsave">Confirm</button></div>
+  </form>
+</dialog>
+
+<dialog id="pdlg">
+  <form method="dialog" id="pform" autocomplete="off">
+    <h2 id="pdt" style="margin:0 0 4px;font-size:18px">New project</h2>
+    <label for="p-name">Project name</label>
+    <input type="text" id="p-name" required>
+    <label for="p-client">Client</label>
+    <input type="text" id="p-client">
+    <div class="row">
+      <div><label for="p-start">Start date</label><input type="date" id="p-start"></div>
+      <div><label for="p-due">Project due date</label><input type="date" id="p-due"></div>
+    </div>
+    <div class="row">
+      <div><label for="p-senior">Senior analyst</label><input type="text" id="p-senior" list="names" autocomplete="off"></div>
+      <div><label for="p-analyst">Analyst / mentee</label><input type="text" id="p-analyst" list="names" autocomplete="off"></div>
+    </div>
+    <div class="hint" style="margin-top:4px">Leave blank for your own project. Separate several names with commas. Projects sharing a name are grouped on the Team tab.</div>
+    <label>Update dates <span class="hint">(add as many as needed, or none)</span></label>
+    <div id="p-updates"></div>
+    <button type="button" class="ghost lnk" id="add-upd">+ Add update date</button>
+    <label>Calls <span class="hint">(add as many as needed, or none)</span></label>
+    <div id="p-calls"></div>
+    <button type="button" class="ghost lnk" id="add-call">+ Add call</button>
+    <div class="hint">Status: <b>Done</b> = already sent or held earlier. <b>Not needed</b> = skipped. Both stop alerts, and skipped ones are left out of progress.</div>
+    <label>Remind me before each update, call and the due date</label>
+    <div class="chips" id="pchips"></div>
+    <label for="p-extra">Extra details</label>
+    <textarea id="p-extra" rows="2" placeholder="Anything else you need to track for this project"></textarea>
+    <label for="p-notes">Notes</label>
+    <textarea id="p-notes" rows="3"></textarea>
+    <datalist id="names"></datalist>
+    <div class="foot">
+      <button type="button" class="ghost" id="pdel" style="margin-right:auto">Delete project</button>
+      <button type="button" id="pcancel">Cancel</button>
+      <button class="primary" type="submit">Save project</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const OFFS=[[0,'At due time'],[15,'15 min'],[30,'30 min'],[60,'1 hour'],[120,'2 hours'],[1440,'1 day'],[2880,'2 days']];
+const TABS=[['dash','Dashboard'],['projects','Projects'],['team','Team'],['today','Today'],['overdue','Overdue'],['upcoming','Upcoming'],['all','All open'],['done','Done']];
+let tasks=[],projects=[],plan=[],view='dash',editing=null,pf=null,pedit=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(p,m='GET',b){const r=await fetch('/api/'+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});return r.json()}
+async function load(){[tasks,projects,plan]=await Promise.all([api('tasks'),api('projects'),api('plan')]);if(!Array.isArray(plan))plan=[];render();if($('#ddlg').open&&cur)(cur.k==='t'?showT(cur.id,back):cur.k==='g'?showPerson(cur.id):showP(cur.id,backP))}
+const fmt=d=>new Date(d).toLocaleString([],{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const lbl=o=>(OFFS.find(x=>x[0]===o)||[0,o+' min'])[1];
+const pname=id=>(projects.find(p=>p.id==id)||{}).name||'';
+
+function render(){
+  const now=new Date(),sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()),eod=new Date(+sod+864e5),q=$('#q').value.toLowerCase();
+  const over=t=>!t.done&&t.due&&new Date(t.due)<now;
+  const list=tasks.filter(t=>{
+    const d=t.due&&new Date(t.due);
+    if(q&&!(t.title+t.notes+t.category).toLowerCase().includes(q))return false;
+    if(pf&&t.project_id!==pf)return false;
+    if(view==='done')return t.done; if(t.done)return false;
+    if(view==='today')return d&&d>=sod&&d<eod;
+    if(view==='overdue')return d&&d<now;
+    if(view==='upcoming')return !d||d>=eod;
+    return true;
+  }).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:1);
+  $('#tabs').innerHTML=TABS.map(([k,n])=>{
+    const c=k==='overdue'?tasks.filter(over).length:'';
+    return `<button data-v="${k}" class="${k===view?'on':''}">${n}${c?` (${c})`:''}</button>`}).join('');
+  if(view==='dash'){$('#list').innerHTML=dash(now,sod,eod,over);return}
+  if(view==='projects'){$('#list').innerHTML=projectsView(over);return}
+  if(view==='team'){$('#list').innerHTML=teamView();return}
+  $('#list').innerHTML=(pf?`<div class="day">Project: <b>${esc(pname(pf))}</b> <button class="ghost" data-clear="1">Show all</button></div>`:'')+(list.length?G(list.map(t=>tcard(t,over)).join('')):`<div class="empty">Nothing here. Use "New task" to add one.</div>`);
+}
+
+const byDue=(a,b)=>(a.due||'9')<(b.due||'9')?-1:1;
+const isOver=t=>!t.done&&t.due&&new Date(t.due)<new Date();
+const fmtD=d=>new Date(d+'T00:00').toLocaleDateString([],{day:'numeric',month:'short'});
+const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayStr=()=>dstr(new Date());
+const fmtDay=d=>new Date(d+'T00:00').toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'});
+const planSum=pid=>{const a=plan.filter(i=>i.project_id===pid);return a.length?`<span>Plan ${a.filter(i=>i.done).length}/${a.length}</span>`:''};
+const lastHold=p=>[...(p.hold_log||[])].reverse().find(x=>x.action==='Hold');
+const holdLog=p=>(p.hold_log||[]).map(e=>`${fmtD(e.date)} - ${e.action==='Hold'?'Put on hold':'Resumed'}: ${esc(e.reason)}`).join('<br>');
+const urg=d=>{
+  if(!d)return 'u-none';
+  const t=new Date(d.length===10?d+'T23:59':d),now=new Date(),sod=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(t<now)return 'u-over';
+  const days=Math.round((new Date(t.getFullYear(),t.getMonth(),t.getDate())-sod)/864e5);
+  return days<=0?'u-today':days===1?'u-tom':days<=7?'u-week':'u-later';
+};
+const prog=(p,ts)=>{
+  if(p.status==='Completed')return {pct:100,label:'Completed'};
+  const now=new Date(),ms=(p.updates||[]).filter(u=>u.when&&u.status!=='skipped'),due=p.due?new Date(p.due+'T23:59'):null;
+  if(ms.length){const n=ms.filter(u=>u.status==='done'||new Date(u.when)<=now).length,all=ms.length+(due?1:0),dn=n+(due&&due<=now?1:0);
+    return {pct:Math.round(100*dn/all),label:`${n} of ${ms.length} update${ms.length>1?'s':''} done or passed`}}
+  if(p.start_date&&due){const s=new Date(p.start_date+'T00:00');return {pct:Math.round(100*Math.min(1,Math.max(0,(now-s)/(due-s)))),label:'of the time elapsed'}}
+  const dn=ts.filter(t=>t.done).length;return {pct:ts.length?Math.round(100*dn/ts.length):0,label:`${dn} of ${ts.length} tasks done`};
+};
+const G=x=>`<div class="grid">${x}</div>`;
+const tcard=(t,over)=>`<div class="card ${t.priority} ${t.done?'done':urg(t.due)}" data-topen="${t.id}" tabindex="0" role="button"><div class="ct"><input type="checkbox" ${t.done?'checked':''} data-toggle="${t.id}" aria-label="Mark done"><span class="t">${esc(t.title)}</span></div><div class="meta"><span class="${over(t)?'late':''}">${t.due?(over(t)?'Overdue: ':'')+fmt(t.due):'No due date'}</span><span>${t.priority}</span>${pname(t.project_id)?`<span>${esc(pname(t.project_id))}</span>`:''}</div></div>`;
+const names=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+const evs=p=>[...(p.updates||[]).filter(u=>u.when&&(u.status||'pending')==='pending').map(u=>({k:'Update',l:u.label,w:u.when})),...(p.calls||[]).filter(c=>c.when&&(c.status||'pending')==='pending').map(c=>({k:'Call',l:c.label,w:c.when}))].sort((a,b)=>a.w<b.w?-1:1);
+const nextEv=p=>evs(p).find(e=>new Date(e.w)>=new Date());
+function groups(){
+  const m={};
+  projects.forEach(p=>[[names(p.senior),'Senior analyst'],[names(p.analyst),'Analyst']].forEach(([ns,role])=>ns.forEach(n=>{
+    const k=n.toLowerCase(),g=m[k]=m[k]||{key:k,name:n,roles:new Set(),projects:[]};
+    g.roles.add(role);if(!g.projects.includes(p))g.projects.push(p)})));
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+}
+const pn=k=>(groups().find(g=>g.key===k)||{}).name||'';
+const pcard=(p,over)=>{
+  const ts=tasks.filter(t=>t.project_id===p.id),dn=ts.filter(t=>t.done).length;
+  const nt=ts.filter(t=>!t.done&&t.due).sort(byDue)[0],po=ts.filter(over).length,ne=nextEv(p),pg=prog(p,ts);
+  const who=[...names(p.senior),...names(p.analyst)].join(', '),hold=p.status==='On Hold',lh=hold?lastHold(p):null;
+  const cls=hold?'hold':p.status==='Completed'?'fin':urg(p.due);
+  return `<div class="card ${cls}" data-popen="${p.id}" tabindex="0" role="button"><div class="ct"><span class="t">${esc(p.name)}</span></div><div class="meta">${p.status!=='Active'?`<span class="pill">${p.status}</span>`:''}${p.client?`<span>${esc(p.client)}</span>`:''}${p.due?`<span>Due ${fmtD(p.due)}</span>`:''}${who?`<span>${esc(who)}</span>`:''}</div><div class="bar2 ${hold?'hold':''}"><i style="width:${pg.pct}%"></i></div><div class="meta"><span>${pg.pct}% - ${pg.label}</span>${planSum(p.id)}${ts.length?`<span>${dn}/${ts.length} tasks done</span>`:''}${po?`<span class="late">${po} overdue</span>`:''}</div>${p.status==='Completed'?`<div class="meta">${p.completed_on?'Completed '+fmtD(p.completed_on)+' - ':''}${p.feedback?'feedback received':'<span class="late">feedback pending</span>'}</div>`:lh?`<div class="meta">On hold since ${fmtD(lh.date)}</div>`:ne?`<div class="meta">Next ${ne.k.toLowerCase()}: ${fmt(ne.w)}${ne.l?', '+esc(ne.l):''}</div>`:nt?`<div class="meta">Next task: ${esc(nt.title)}</div>`:''}</div>`};
+function projectsView(over){
+  if(!projects.length)return '<div class="empty">No projects yet. Use "New project" to add one.</div>';
+  return ['Active','On Hold','Completed'].map(s=>{const a=projects.filter(p=>p.status===s);
+    return a.length?`<h2 class="sec">${s} <small>${a.length}</small></h2>${G(a.map(p=>pcard(p,over)).join(''))}`:''}).join('');
+}
+function teamView(){
+  const g=groups();
+  if(!g.length)return '<div class="empty">No team members yet. Add a senior analyst or analyst to a project and they appear here as one card, with all their projects inside.</div>';
+  return G(g.map(x=>{
+    const act=x.projects.filter(p=>p.status==='Active'),ne=act.map(nextEv).filter(Boolean).sort((a,b)=>a.w<b.w?-1:1)[0];
+    return `<div class="card" data-person="${esc(x.key)}" tabindex="0" role="button"><div class="ct"><span class="t">${esc(x.name)}</span></div><div class="meta">${[...x.roles].map(r=>`<span class="pill">${r}</span>`).join('')}</div><div class="meta"><span>${act.length} active project${act.length==1?'':'s'}</span>${x.projects.length>act.length?`<span>${x.projects.length} in total</span>`:''}</div>${ne?`<div class="meta">Next ${ne.k.toLowerCase()}: ${fmt(ne.w)}</div>`:''}</div>`}).join(''));
+}
+function todayWork(open,act,sod,eod,nOver){
+  const inDay=d=>d&&new Date(d)>=sod&&new Date(d)<eod,L=[];
+  open.filter(t=>inDay(t.due)).forEach(t=>L.push({w:t.due,a:`data-topen="${t.id}"`,h:`<span class="k">Task</span> ${esc(t.title)}${pname(t.project_id)?` (${esc(pname(t.project_id))})`:''}`}));
+  act.forEach(p=>{
+    evs(p).filter(e=>inDay(e.w)).forEach(e=>L.push({w:e.w,a:`data-popen="${p.id}"`,h:`<span class="k">${e.k}</span> ${esc(e.l||p.name)} (${esc(p.name)})`}));
+    if(p.due&&p.due===todayStr())L.push({w:p.due+'T17:00',a:`data-popen="${p.id}"`,h:`<span class="k">Due</span> Project ${esc(p.name)} is due today`});
+  });
+  L.sort((a,b)=>a.w<b.w?-1:1);
+  const tp=plan.filter(i=>i.day===todayStr()&&act.some(p=>p.id===i.project_id)),gp={};
+  tp.forEach(i=>(gp[i.project_id]=gp[i.project_id]||[]).push(i));
+  const planBlock=tp.length?`<div class="planbox"><div class="hint">Plan for today: ${tp.filter(i=>i.done).length} of ${tp.length} done. Tick what you finish; anything left unchecked moves to tomorrow automatically.</div>${Object.entries(gp).map(([pid,a])=>`<div class="pg"><b>${esc(pname(+pid))}</b>${a.map(i=>`<label class="pi"><input type="checkbox" data-plan="${i.id}" ${i.done?'checked':''}> <span class="${i.done?'dn':''}">${esc(i.text)}${i.carried>0&&!i.done?` <span class="hint">(from ${fmtD(i.orig_day)})</span>`:''}</span></label>`).join('')}</div>`).join('')}</div>`:'';
+  const tm=w=>w.length>10?new Date(w).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="today"><h2 class="sec" style="margin-top:0">Today's work <small>${L.length}</small></h2><ul>${L.length?L.map(x=>`<li><button class="ghost lnk" ${x.a}>${tm(x.w)} ${x.h}</button></li>`).join(''):(tp.length?'':'<li class="mute">Nothing scheduled for today.</li>')}${nOver?`<li><button class="ghost lnk" data-v="overdue">${nOver} overdue task${nOver>1?'s':''} still open</button></li>`:''}</ul>${planBlock}</div>`;
+}
+function dash(now,sod,eod,over){
+  const open=tasks.filter(t=>!t.done),D=t=>t.due&&new Date(t.due);
+  const od=open.filter(over).sort(byDue),td=open.filter(t=>D(t)>=sod&&D(t)<eod).sort(byDue);
+  const wk=new Date(+sod+7*864e5),nx=open.filter(t=>D(t)>=eod&&D(t)<wk).sort(byDue);
+  const act=projects.filter(p=>p.status==='Active'),hold=projects.filter(p=>p.status==='On Hold'),ongo=[...act,...hold];
+  const tile=(n,l,v,c)=>`<button class="tile ${c||''}" data-v="${v}"><b>${n}</b><span>${l}</span></button>`;
+  const sec=(h,n,body)=>`<h2 class="sec">${h} <small>${n}</small></h2>${body}`;
+  const tc=a=>G(a.map(t=>tcard(t,over)).join(''));
+  const horizon=new Date(+sod+14*864e5);
+  const ev=act.flatMap(p=>evs(p).filter(e=>new Date(e.w)>=now&&new Date(e.w)<horizon).map(e=>({...e,p}))).sort((a,b)=>a.w<b.w?-1:1);
+  const evc=G(ev.map(e=>`<div class="card ${urg(e.w)}" data-popen="${e.p.id}" tabindex="0" role="button"><div class="ct"><span class="t">${e.k}: ${esc(e.l||e.p.name)}</span></div><div class="meta"><span>${fmt(e.w)}</span><span>${esc(e.p.name)}</span></div></div>`).join(''));
+  const g={};nx.forEach(t=>{const k=new Date(t.due).toLocaleDateString([],{weekday:'long',day:'numeric',month:'short'});(g[k]=g[k]||[]).push(t)});
+  const days=Object.entries(g).map(([k,a])=>`<div class="day">${k}</div>${tc(a)}`).join('');
+  return todayWork(open,act,sod,eod,od.length)+`<div class="tiles">${tile(od.length,'Overdue','overdue',od.length?'warn':'')}${tile(td.length,'Due today','today')}${tile(nx.length,'Next 7 days','upcoming')}${tile(act.length,'Active projects','projects')}${tile(hold.length,'On hold','projects')}</div>`
+    +sec('Ongoing projects',ongo.length,ongo.length?G(ongo.map(p=>pcard(p,over)).join('')):'<div class="empty">No active projects yet. Use "New project" to add one.</div>')
+    +(ev.length?sec('Calls and updates, next 14 days',ev.length,evc):'')
+    +(od.length?sec('Overdue',od.length,tc(od)):'')
+    +(td.length?sec('Today',td.length,tc(td)):'')
+    +sec('Next 7 days',nx.length,days||'<div class="empty">Nothing due in the next 7 days.</div>');
+}
+let cur=null,back=null,backP=null;
+const row=(k,v)=>v?`<div class="dr"><span>${k}</span><div>${v}</div></div>`:'';
+const dshow=()=>{const d=$('#ddlg');if(!d.open)d.showModal()};
+function showT(id,from){
+  const t=tasks.find(x=>x.id==id);if(!t){$('#ddlg').close();return}
+  cur={k:'t',id:t.id};back=from||null;
+  $('#dbody').innerHTML=`${back?`<button class="ghost lnk" data-popen="${back}">Back to project</button>`:''}
+    <h2>${esc(t.title)}</h2><span class="pill">${t.done?'Done':isOver(t)?'Overdue':'Open'}</span>
+    ${row('Due',t.due?fmt(t.due):'')}${row('Priority',t.priority)}
+    ${row('Project',pname(t.project_id)?`<button class="ghost lnk" data-popen="${t.project_id}">${esc(pname(t.project_id))}</button>`:'')}
+    ${row('Category',esc(t.category))}${row('Repeats',t.repeat)}
+    ${row('Reminders',t.due&&t.reminders.length?t.reminders.map(lbl).join(', '):'')}${row('Notes',esc(t.notes))}${row('Postponed',t.postponed?`${t.postponed} time${t.postponed>1?'s':''}${t.orig_due?`, originally ${fmt(t.orig_due)}`:''}`:'')}${!t.done&&t.due?`<div class="pp"><span class="hint">Postpone</span><button data-pp="${t.id}" data-days="1">+1 day</button><button data-pp="${t.id}" data-days="2">+2 days</button><input type="datetime-local" id="pp-custom" aria-label="New due date"><button data-ppc="${t.id}">Set date</button></div>`:''}
+    <div class="foot"><button class="ghost" style="margin-right:auto" data-tdel="${t.id}">Delete</button>
+      ${t.done?'':`<button data-snooze="${t.id}">Snooze 1h</button>`}<button data-edit="${t.id}">Edit</button>
+      <button class="primary" data-ttoggle="${t.id}">${t.done?'Reopen':'Mark done'}</button></div>`;
+  dshow();
+}
+function showP(id,fp){
+  const p=projects.find(x=>x.id==id);if(!p){$('#ddlg').close();return}
+  cur={k:'p',id:p.id};back=null;backP=fp||null;
+  const ts=tasks.filter(t=>t.project_id===p.id),op=ts.filter(t=>!t.done).sort(byDue),dn=ts.length-op.length,pct=ts.length?Math.round(100*dn/ts.length):0;
+  const pg=prog(p,ts);
+  const pi=plan.filter(i=>i.project_id===p.id),pdn=pi.filter(i=>i.done).length,byDay={};pi.forEach(i=>(byDay[i.day]=byDay[i.day]||[]).push(i));
+  const planHtml=Object.keys(byDay).sort().map(day=>`<div class="day">${fmtDay(day)}${day===todayStr()?' (today)':''}</div>`+byDay[day].map(i=>`<div class="pi2"><label class="pi"><input type="checkbox" data-plan="${i.id}" ${i.done?'checked':''}> <span class="${i.done?'dn':''}">${esc(i.text)}</span></label>${i.carried>0&&!i.done?`<span class="hint">carried over from ${fmtD(i.orig_day)}</span>`:''}<button class="ghost" data-pdel="${i.id}">Remove</button></div>`).join('')).join('');
+  const lst=a=>a.filter(e=>e.when).sort((x,y)=>x.when<y.when?-1:1).map(e=>`${fmt(e.when)}${e.label?' - '+esc(e.label):''}`).join('<br>');
+  $('#dbody').innerHTML=`${backP?`<button class="ghost lnk" data-person-back="${esc(backP)}">Back to ${esc(pn(backP))}</button>`:''}
+    <h2>${esc(p.name)}</h2><span class="pill">${p.status}</span>
+    ${row('Client',esc(p.client))}${row('Senior analyst',esc(p.senior))}${row('Analyst',esc(p.analyst))}
+    ${row('Started',p.start_date?fmtD(p.start_date):'')}${row('Due',p.due?fmtD(p.due):'')}
+    ${row('Updates',items(p,'update'))}${row('Calls',items(p,'call'))}
+    ${row('Reminders',p.reminders&&p.reminders.length?p.reminders.map(lbl).join(', '):'')}
+    ${row('Extra details',esc(p.extra))}${row('Notes',esc(p.notes))}${row('Completed',p.completed_on?fmtD(p.completed_on):'')}${p.status==='Completed'?row('Client feedback',p.feedback?esc(p.feedback)+(p.feedback_on?`<br><span class="hint">Received ${fmtD(p.feedback_on)}</span>`:''):'<span class="late">Not received yet</span><br><span class="hint">You get a reminder every 5 days until you add it.</span>'):''}${row('History',holdLog(p))}
+    <div class="bar2 ${p.status==='On Hold'?'hold':''}"><i style="width:${pg.pct}%"></i></div><div class="meta"><span>${pg.pct}% - ${pg.label}</span><span>${dn} of ${ts.length} tasks done</span></div>
+    <h2 class="sec">Project plan <small>${pi.length?pdn+' of '+pi.length+' done':'none yet'}</small> <button class="ghost lnk" data-planadd="${p.id}">${pi.length?'Add to plan':'Plan the days'}</button></h2>${planHtml}
+    <h2 class="sec">Open tasks <small>${op.length}</small></h2>
+    ${op.length?op.map(t=>`<button class="ghost rt" data-topen="${t.id}"><span>${esc(t.title)}</span><small class="${isOver(t)?'late':''}">${t.due?fmt(t.due):'No date'}</small></button>`).join(''):'<div class="empty" style="padding:12px 0">No open tasks.</div>'}
+    <div class="foot"><button class="ghost" style="margin-right:auto" data-dclose="1">Close</button><button data-pedit="${p.id}">Edit project</button>${p.status==='Active'?`<button data-hold="${p.id}">Put on hold</button><button data-done="${p.id}">Mark project done</button>`:p.status==='On Hold'?`<button data-resume="${p.id}">Resume project</button>`:`${p.feedback?'':`<button class="primary" data-fb="${p.id}">Add client feedback</button>`}<button data-reopen="${p.id}">Reopen project</button>`}${p.status==='Completed'?'':`<button class="primary" data-newt="${p.id}">Add task</button>`}</div>`;
+  dshow();
+}
+function showPerson(key){
+  const x=groups().find(g=>g.key===key);if(!x){$('#ddlg').close();return}
+  cur={k:'g',id:key};back=null;backP=null;
+  const op=x.projects.filter(p=>p.status==='Active'),rest=x.projects.filter(p=>p.status!=='Active'),mates=new Set();
+  x.projects.forEach(p=>[...names(p.senior),...names(p.analyst)].forEach(n=>{if(n.toLowerCase()!==key)mates.add(n)}));
+  const pr=p=>{const ne=nextEv(p);return `<button class="ghost rt" data-pfrom="${p.id}"><span>${esc(p.name)}${p.client?` <small>(${esc(p.client)})</small>`:''}</span><small>${ne?`${ne.k}: ${fmt(ne.w)}`:p.status}</small></button>`};
+  $('#dbody').innerHTML=`<h2>${esc(x.name)}</h2>${[...x.roles].map(r=>`<span class="pill">${r}</span> `).join('')}
+    ${row('Works with',esc([...mates].join(', ')))}
+    <h2 class="sec">Active projects <small>${op.length}</small></h2>${op.length?op.map(pr).join(''):'<div class="empty" style="padding:12px 0">None.</div>'}
+    ${rest.length?`<h2 class="sec">Other projects <small>${rest.length}</small></h2>${rest.map(pr).join('')}`:''}
+    <div class="foot"><button class="primary" data-dclose="1">Close</button></div>`;
+  dshow();
+}
+const items=(p,kind)=>(p[kind==='update'?'updates':'calls']||[]).map((e,i)=>{
+  const st=e.status||'pending',b=(s,n)=>`<button class="ghost" data-it="${p.id}|${kind}|${i}|${s}">${n}</button>`;
+  return `<div class="it ${st!=='pending'?'dim':''}"><span>${fmt(e.when)}${e.label?' - '+esc(e.label):''}</span>${st!=='pending'?`<span class="pill">${st==='done'?'Done':'Not needed'}</span>`:''}${st==='pending'?b('done','Done')+b('skipped','Not needed'):b('pending','Undo')}</div>`}).join('');
+let plid=null;
+function makeDays(){
+  const st=$('#pl-start').value;if(!st)return;
+  const keep={};document.querySelectorAll('#pl-grid textarea').forEach(t=>keep[t.dataset.day]=t.value);
+  const d=new Date(st+'T00:00'),n=Math.min(60,Math.max(1,+$('#pl-days').value||1));let i=0,out='';
+  while(i<n){
+    if(!($('#pl-wk').checked&&[0,6].includes(d.getDay()))){
+      i++;const k=dstr(d);
+      out+=`<div><label>Day ${i} - ${fmtDay(k)}</label><textarea rows="2" data-day="${k}" placeholder="One task per line">${esc(keep[k]||'')}</textarea></div>`;
+    }
+    d.setDate(d.getDate()+1);
+  }
+  $('#pl-grid').innerHTML=out;
+}
+function openPlan(pid){
+  const p=projects.find(x=>x.id==pid);if(!p)return;plid=pid;$('#pl-name').textContent=p.name;
+  const st=p.start_date&&p.start_date>=todayStr()?p.start_date:todayStr();
+  $('#pl-start').value=st;
+  $('#pl-days').value=p.due&&p.due>=st?Math.min(60,Math.round((new Date(p.due+'T00:00')-new Date(st+'T00:00'))/864e5)+1):10;
+  $('#pl-grid').innerHTML='';makeDays();$('#pldlg').showModal();
+}
+$('#pl-start').onchange=$('#pl-days').onchange=$('#pl-wk').onchange=makeDays;
+$('#pl-cancel').onclick=()=>$('#pldlg').close();
+$('#plform').onsubmit=async e=>{e.preventDefault();
+  const items=[];document.querySelectorAll('#pl-grid textarea').forEach(t=>t.value.split('\n').map(x=>x.trim()).filter(Boolean).forEach(x=>items.push({day:t.dataset.day,text:x})));
+  if(!items.length){alert('Write at least one task for at least one day.');return}
+  const r=await api(`projects/${plid}/plan`,'POST',{items});
+  if(r.detail){alert(typeof r.detail==='string'?r.detail:'Could not save the plan.');return}
+  $('#pldlg').close();await load();showP(plid)};
+const HA={
+ hold:{t:'Put project on hold',dl:'Date',rl:'Reason',req:1,ph:'Why is this project being put on hold?',b:'Put on hold'},
+ resume:{t:'Resume project',dl:'Date',rl:'Reason',req:1,ph:'Why is this project being resumed?',b:'Resume project'},
+ done:{t:'Mark project as done',dl:'Completion date',rl:'Note (optional)',req:0,ph:'Anything worth remembering about the delivery',b:'Mark as done'},
+ reopen:{t:'Reopen project',dl:'Date',rl:'Reason',req:1,ph:'Why is this project being reopened?',b:'Reopen project'},
+ feedback:{t:'Client feedback',dl:'Date received',rl:'Feedback',req:1,ph:'What did the client say?',b:'Save feedback'}};
+let hact=null,hid=null;
+function openH(id,action){
+  const p=projects.find(x=>x.id==id),a=HA[action];hid=id;hact=action;
+  $('#hdt').textContent=a.t;$('#hname').textContent=p?p.name:'';
+  $('#lbl-hd').textContent=a.dl;$('#lbl-hr').textContent=a.rl;
+  $('#h-reason').placeholder=a.ph;$('#h-reason').required=!!a.req;$('#hsave').textContent=a.b;
+  $('#h-date').value=todayStr();$('#h-reason').value='';
+  $('#ddlg').close();$('#hdlg').showModal();$('#h-reason').focus();
+}
+$('#hcancel').onclick=()=>$('#hdlg').close();
+$('#hform').onsubmit=async e=>{e.preventDefault();
+  const r=await api(`projects/${hid}/action`,'POST',{action:hact,date:$('#h-date').value,reason:$('#h-reason').value});
+  if(r.detail){alert(typeof r.detail==='string'?r.detail:'Please fill in the date and the details.');return}
+  $('#hdlg').close();await load();showP(hid)};
+const dynRow=(e,ph)=>`<div class="dyn"><input type="datetime-local" value="${esc((e&&e.when)||'')}" aria-label="Date and time"><input type="text" placeholder="${ph}" value="${esc((e&&e.label)||'')}"><select aria-label="Status">${[['pending','Pending'],['done','Done'],['skipped','Not needed']].map(([v,n])=>`<option value="${v}" ${e&&e.status===v?'selected':''}>${n}</option>`).join('')}</select><button type="button" class="ghost" data-rm="1">Remove</button></div>`;
+const dynRead=id=>[...document.querySelectorAll('#'+id+' .dyn')].map(r=>({when:r.querySelector('input[type=datetime-local]').value,label:r.querySelector('input[type=text]').value.trim(),status:r.querySelector('select').value})).filter(x=>x.when);
+$('#pchips').innerHTML=OFFS.map(([o,n])=>`<label><input type="checkbox" value="${o}">${n}</label>`).join('');
+function openP(p){
+  pedit=p?p.id:null;$('#pdt').textContent=p?'Edit project':'New project';
+  $('#p-name').value=p?p.name:'';$('#p-client').value=p?p.client:'';
+  $('#p-start').value=p&&p.start_date?p.start_date:'';$('#p-due').value=p&&p.due?p.due:'';
+  $('#p-senior').value=p?p.senior:'';$('#p-analyst').value=p?p.analyst:'';
+  $('#p-extra').value=p?p.extra:'';$('#p-notes').value=p?p.notes:'';
+  $('#p-updates').innerHTML=(p?p.updates:[]).map(e=>dynRow(e,'Label, e.g. interim update')).join('');
+  $('#p-calls').innerHTML=(p?p.calls:[]).map(e=>dynRow(e,'Label, e.g. kick-off call')).join('');
+  const rem=p?p.reminders:[1440,120];
+  document.querySelectorAll('#pchips input').forEach(i=>i.checked=rem.includes(+i.value));
+  $('#names').innerHTML=[...new Set(groups().map(g=>g.name))].map(n=>`<option value="${esc(n)}">`).join('');
+  $('#pdel').style.display=p?'':'none';$('#pdlg').showModal();$('#p-name').focus();
+}
+$('#addp').onclick=()=>openP();
+$('#add-upd').onclick=()=>$('#p-updates').insertAdjacentHTML('beforeend',dynRow(null,'Label, e.g. interim update'));
+$('#add-call').onclick=()=>$('#p-calls').insertAdjacentHTML('beforeend',dynRow(null,'Label, e.g. kick-off call'));
+$('#pcancel').onclick=()=>$('#pdlg').close();
+$('#pform').onsubmit=async e=>{e.preventDefault();
+  const b={name:$('#p-name').value,client:$('#p-client').value,start_date:$('#p-start').value||null,due:$('#p-due').value||null,
+    senior:$('#p-senior').value,analyst:$('#p-analyst').value,extra:$('#p-extra').value,notes:$('#p-notes').value,
+    updates:dynRead('p-updates'),calls:dynRead('p-calls'),reminders:[...document.querySelectorAll('#pchips input:checked')].map(i=>+i.value)};
+  const r=await api(pedit?'projects/'+pedit:'projects',pedit?'PUT':'POST',b);$('#pdlg').close();await load();if(!pedit&&r&&r.id)openPlan(r.id)};
+$('#pdel').onclick=async()=>{if(confirm('Delete this project? Its tasks are kept.')){await api('projects/'+pedit,'DELETE');$('#pdlg').close();load()}};
+$('#chips').innerHTML=OFFS.map(([o,n])=>`<label><input type="checkbox" value="${o}">${n}</label>`).join('');
+function open(t,pid){
+  editing=t?t.id:null;$('#dt').textContent=t?'Edit task':'New task';
+  $('#f-title').value=t?t.title:'';$('#f-due').value=t&&t.due?t.due.slice(0,16):'';
+  $('#f-pri').value=t?t.priority:'Medium';$('#f-cat').value=t?t.category:'';
+  $('#f-rep').value=t?t.repeat:'';$('#f-notes').value=t?t.notes:'';
+  $('#f-proj').innerHTML='<option value="">No project</option>'+projects.filter(p=>p.status!=='Completed'||(t&&t.project_id===p.id)).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  $('#f-proj').value=t?(t.project_id||''):(pid||pf||'');
+  const rem=t?t.reminders:[60];
+  document.querySelectorAll('#chips input').forEach(i=>i.checked=rem.includes(+i.value));
+  $('#dlg').showModal();$('#f-title').focus();
+}
+$('#add').onclick=()=>open();
+$('#cancel').onclick=()=>$('#dlg').close();
+$('#form').onsubmit=async e=>{
+  e.preventDefault();
+  const b={title:$('#f-title').value,due:$('#f-due').value||null,priority:$('#f-pri').value,category:$('#f-cat').value,
+    repeat:$('#f-rep').value,notes:$('#f-notes').value,project_id:$('#f-proj').value?+$('#f-proj').value:null,
+    reminders:[...document.querySelectorAll('#chips input:checked')].map(i=>+i.value)};
+  await api(editing?'tasks/'+editing:'tasks',editing?'PUT':'POST',b);
+  $('#dlg').close();load();
+};
+document.addEventListener('click',async e=>{
+  const d=e.target.dataset;
+  if(d.v){view=d.v;pf=null;render()}
+  if(d.proj){pf=+d.proj;view='all';render()}
+  if(d.pedit){$('#ddlg').close();openP(projects.find(p=>p.id==d.pedit))}
+  if(d.popen)showP(+d.popen);
+  if(d.topen)showT(+d.topen,$('#ddlg').open&&cur&&cur.k==='p'?cur.id:null);
+  if(d.newt){$('#ddlg').close();open(null,+d.newt)}
+  if(d.dclose)$('#ddlg').close();
+  if(d.rm)e.target.closest('.dyn').remove();
+  if(d.hold)openH(+d.hold,'hold');
+  if(d.resume)openH(+d.resume,'resume');
+  if(d.done)openH(+d.done,'done');
+  if(d.reopen)openH(+d.reopen,'reopen');
+  if(d.fb)openH(+d.fb,'feedback');
+  if(d.it){const [pid,kind,i,st]=d.it.split('|');await api(`projects/${pid}/item`,'POST',{kind,index:+i,status:st});load()}
+  if(d.pp){await api(`tasks/${d.pp}/postpone`,'POST',{days:+d.days});load()}
+  if(d.ppc){const v=$('#pp-custom').value;if(v){await api(`tasks/${d.ppc}/postpone`,'POST',{due:v});load()}else alert('Pick a new date and time first.')}
+  if(d.planadd){$('#ddlg').close();openPlan(+d.planadd)}
+  if(d.pdel&&confirm('Remove this plan item?')){await api('plan/'+d.pdel,'DELETE');load()}
+  if(d.pfrom)showP(+d.pfrom,cur&&cur.k==='g'?cur.id:null);
+  if(d.personBack)showPerson(d.personBack);
+  if(d.ttoggle){await api('tasks/'+d.ttoggle+'/toggle','POST');load()}
+  if(d.tdel&&confirm('Delete this task?')){await api('tasks/'+d.tdel,'DELETE');$('#ddlg').close();load()}
+  if(d.clear){pf=null;render()}
+  if(d.edit){$('#ddlg').close();open(tasks.find(t=>t.id==d.edit))}
+  if(d.del&&confirm('Delete this task?')){await api('tasks/'+d.del,'DELETE');load()}
+  if(d.snooze){await api(`tasks/${d.snooze}/snooze?minutes=60`,'POST');alert('You will be reminded again in 1 hour.')}
+});
+document.addEventListener('click',e=>{
+  const dlg=$('#ddlg');if(e.target===dlg){dlg.close();return}
+  if(e.target.closest('input,button'))return;
+  const c=e.target.closest('[data-topen],[data-popen],[data-person]');
+  if(c){if(c.dataset.topen)showT(+c.dataset.topen,null);else if(c.dataset.popen)showP(+c.dataset.popen);else showPerson(c.dataset.person)}
+});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('card')){e.preventDefault();e.target.click()}});
+document.addEventListener('change',async e=>{
+  if(e.target.dataset.toggle){await api('tasks/'+e.target.dataset.toggle+'/toggle','POST');load()}
+  if(e.target.dataset.plan){await api('plan/'+e.target.dataset.plan+'/toggle','POST');load()}
+});
+$('#q').oninput=()=>{if(['dash','projects','team'].includes(view)&&$('#q').value)view='all';render()};
+const setTheme=t=>{document.documentElement.dataset.theme=t;localStorage.setItem('theme',t)};
+setTheme(localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+$('#theme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+load();setInterval(load,60000);
+</script>
+</body>
+</html>
