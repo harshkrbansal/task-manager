@@ -1,3 +1,5 @@
+import os
+import tempfile
 import csv
 import io
 import json
@@ -13,10 +15,18 @@ from pathlib import Path
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+if sys.stdout is None:  # --noconsole build has no console
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 
 FROZEN = getattr(sys, "frozen", False)
 BASE = Path(sys._MEIPASS) if FROZEN else Path(__file__).parent  # bundled files
@@ -573,6 +583,87 @@ def delete_project(pid: int):
         c.execute("DELETE FROM plan_items WHERE project_id=?", (pid,))
         c.execute("DELETE FROM projects WHERE id=?", (pid,))
     return {"ok": True}
+
+
+# ---------- Voice input (offline Whisper, runs only on this PC) ----------
+VOICE_DIR = DATA / "models" / "small"
+VOICE_REPO = "Systran/faster-whisper-small"
+VOICE_PROMPT = ("Project name, client, due date kal, parso, shaam 5 baje, priority high, "
+                "reminder 1 hour, notes, senior analyst, task.")
+_vm = {"model": None, "busy": False, "error": ""}
+_vlock = threading.Lock()
+
+
+def voice_ready():
+    return (VOICE_DIR / "ready.txt").exists() and (VOICE_DIR / "model.bin").exists()
+
+
+def _download():
+    try:
+        from huggingface_hub import snapshot_download
+        VOICE_DIR.mkdir(parents=True, exist_ok=True)
+        snapshot_download(VOICE_REPO, local_dir=str(VOICE_DIR))
+        (VOICE_DIR / "ready.txt").write_text("ok")
+        _vm["error"] = ""
+    except Exception as e:
+        _vm["error"] = str(e)[:300]
+    finally:
+        _vm["busy"] = False
+
+
+def transcribe(data):
+    with _vlock:
+        if _vm["model"] is None:
+            from faster_whisper import WhisperModel
+            _vm["model"] = WhisperModel(str(VOICE_DIR), device="cpu", compute_type="int8")
+        fd, name = tempfile.mkstemp(suffix=".webm")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+            segs, info = _vm["model"].transcribe(
+                name, beam_size=5, vad_filter=True, initial_prompt=VOICE_PROMPT,
+                vad_parameters={"min_silence_duration_ms": 1500},
+                condition_on_previous_text=False)
+            text = " ".join(s.text.strip() for s in segs).strip()
+        finally:
+            try:
+                os.remove(name)  # the audio is deleted right away
+            except OSError:
+                pass
+    return {"text": text, "language": info.language}
+
+
+@app.get("/voice.js")
+def voice_js():
+    return FileResponse(BASE / "voice.js", media_type="application/javascript")
+
+
+@app.get("/api/voice/status")
+def voice_status():
+    return {"ready": voice_ready(), "downloading": _vm["busy"], "error": _vm["error"]}
+
+
+@app.post("/api/voice/download")
+def voice_download():
+    if not voice_ready() and not _vm["busy"]:
+        _vm["busy"], _vm["error"] = True, ""
+        threading.Thread(target=_download, daemon=True).start()
+    return voice_status()
+
+
+@app.post("/api/voice")
+async def voice(request: Request):
+    if not voice_ready():
+        raise HTTPException(409, "model_missing")
+    data = await request.body()
+    if len(data) < 1000:
+        raise HTTPException(400, "Recording bahut chhoti hai. Dobara bolo.")
+    if len(data) > 60_000_000:
+        raise HTTPException(400, "Recording bahut lambi hai. Chhote hisson mein bolo.")
+    try:
+        return await run_in_threadpool(transcribe, data)
+    except Exception as e:
+        raise HTTPException(500, "Voice error: " + str(e)[:200])
 
 
 if __name__ == "__main__":
