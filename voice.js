@@ -140,6 +140,16 @@ async function poll(p){
 function report(p,r){
   msg(p,(r.ok.length?'Bhara gaya: '+r.ok.join(', ')+'. ':'Koi field match nahi hui (text Notes mein gaya). ')+(r.miss.length?'Samajh nahi aaya, Notes mein daal diya: '+r.miss.join(' | '):''));
 }
+ async function toPCM(blob){
+  const buf=await blob.arrayBuffer();
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const dec=await ac.decodeAudioData(buf);
+  ac.close();
+  const off=new OfflineAudioContext(1,Math.max(1,Math.ceil(dec.duration*16000)),16000);
+  const src=off.createBufferSource();
+  src.buffer=dec;src.connect(off.destination);src.start();
+  return (await off.startRendering()).getChannelData(0);
+}
 async function act(k,a,p){
   const s=S[k],ta=p.querySelector('.vtxt');
   if(a==='rec'){
