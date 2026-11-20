@@ -1,0 +1,16 @@
+name: Build Windows exe
+on: [workflow_dispatch, push]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install fastapi uvicorn winotify pyinstaller
+      - run: pyinstaller --onefile --noconsole --name TaskManager --add-data "index.html;." --collect-submodules uvicorn app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TaskManager
+          path: dist/TaskManager.exe
