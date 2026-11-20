@@ -167,7 +167,8 @@ async function act(k,a,p){
     s.stream.getTracks().forEach(t=>t.stop());s.rec=s.stream=null;s.chunks=[];s.st='busy';ui(p,s);
     msg(p,'Pehli baar model load hone mein zyada time lag sakta hai.');
     try{
-      const r=await fetch('/api/voice',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:blob}),j=await r.json();
+      const pcm=await toPCM(blob);
+      const r=await fetch('/api/voice',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:pcm}),j=await r.json();
       if(!r.ok){msg(p,r.status===409?'Voice model nahi mila. Download button dabao.':(typeof j.detail==='string'?j.detail:'Voice error.'));if(r.status===409)p.querySelector('[data-vact=dl]').hidden=false}
       else if(!j.text){msg(p,'Kuch sunai nahi diya. Dobara bolo.')}
       else{ta.value=(ta.value?ta.value+'\n':'')+j.text;report(p,fill(k,j.text,false))}
