@@ -612,24 +612,17 @@ def _download():
 
 
 def transcribe(data):
+    import numpy as np
+    audio = np.frombuffer(data[: len(data) // 4 * 4], dtype=np.float32)
     with _vlock:
         if _vm["model"] is None:
             from faster_whisper import WhisperModel
             _vm["model"] = WhisperModel(str(VOICE_DIR), device="cpu", compute_type="int8")
-        fd, name = tempfile.mkstemp(suffix=".webm")
-        try:
-            with os.fdopen(fd, "wb") as f:
-                f.write(data)
-            segs, info = _vm["model"].transcribe(
-                name, beam_size=5, vad_filter=True, initial_prompt=VOICE_PROMPT,
-                vad_parameters={"min_silence_duration_ms": 1500},
-                condition_on_previous_text=False)
-            text = " ".join(s.text.strip() for s in segs).strip()
-        finally:
-            try:
-                os.remove(name)  # the audio is deleted right away
-            except OSError:
-                pass
+        segs, info = _vm["model"].transcribe(
+            audio, beam_size=5, vad_filter=True, initial_prompt=VOICE_PROMPT,
+            vad_parameters={"min_silence_duration_ms": 1500},
+            condition_on_previous_text=False)
+        text = " ".join(s.text.strip() for s in segs).strip()
     return {"text": text, "language": info.language}
 
 
