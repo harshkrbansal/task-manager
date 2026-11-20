@@ -131,6 +131,7 @@ dialog input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line
 <dialog id="dlg">
   <form method="dialog" id="form" autocomplete="off">
     <h2 id="dt" style="margin:0 0 4px;font-size:18px">New task</h2>
+    <div class="voice" data-kind="task"></div>
     <label for="f-title">Title</label>
     <input type="text" id="f-title" required>
     <div class="row">
@@ -188,6 +189,7 @@ dialog input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line
 <dialog id="pdlg">
   <form method="dialog" id="pform" autocomplete="off">
     <h2 id="pdt" style="margin:0 0 4px;font-size:18px">New project</h2>
+    <div class="voice" data-kind="project"></div>
     <label for="p-name">Project name</label>
     <input type="text" id="p-name" required>
     <label for="p-client">Client</label>
@@ -544,5 +546,6 @@ setTheme(localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)
 $('#theme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 load();setInterval(load,60000);
 </script>
+<script src="/voice.js"></script>
 </body>
 </html>
